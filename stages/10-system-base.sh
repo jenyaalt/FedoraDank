@@ -3,6 +3,8 @@ set -euo pipefail
 STAGE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$STAGE_DIR/../lib/common.sh"
+# shellcheck source=../lib/detect.sh
+source "$STAGE_DIR/../lib/detect.sh"
 
 log_info "upgrading system packages"
 retry 2 sudo dnf upgrade -y
@@ -26,6 +28,26 @@ dnf_install \
 
 # fd package provides `fd` or `fdfind` depending on distro — on Fedora it is `fd`
 # ripgrep provides `rg`
+
+# WiFi: if NetworkManager is missing/disabled, install NM + firmware and enable it
+if wifi_stack_ok; then
+  log_info "WiFi stack OK (NetworkManager enabled)"
+else
+  if has_wifi_hardware; then
+    log_info "WiFi hardware present but NetworkManager support missing — installing"
+  else
+    log_info "NetworkManager WiFi support missing — installing NetworkManager + firmware"
+  fi
+  dnf_install NetworkManager linux-firmware \
+    || log_warn "NetworkManager / linux-firmware install had issues"
+  # Optional WiFi plugin package on some Fedora releases
+  dnf_install NetworkManager-wifi || log_warn "NetworkManager-wifi not available (may be bundled)"
+  if ! sudo systemctl enable --now NetworkManager; then
+    log_warn "could not enable NetworkManager — start it manually after reboot"
+  else
+    log_success "NetworkManager enabled"
+  fi
+fi
 
 log_info "installing uv"
 if ! command -v uv >/dev/null 2>&1; then

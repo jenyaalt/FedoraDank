@@ -32,6 +32,10 @@ During Dank, select **niri** and **Kitty**.
 
 Auto-detects **VirtualBox** (Guest Additions) or **Lenovo ThinkPad** (firmware, TLP, Intel/AMD/NVIDIA branch).
 
+## WiFi
+
+Stage 10 checks for NetworkManager (`nmcli` + enabled service). If missing, it installs **NetworkManager** (+ `NetworkManager-wifi` when available), **linux-firmware**, and enables the service.
+
 ## Docs
 
 - Design: `docs/superpowers/specs/2026-07-21-fedoradank-bootstrap-design.md`
