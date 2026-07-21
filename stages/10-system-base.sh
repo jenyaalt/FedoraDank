@@ -14,6 +14,10 @@ retry 2 sudo dnf install -y \
   "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${release}.noarch.rpm" \
   || log_warn "RPM Fusion may already be enabled"
 
+log_info "installing COPR plugin (required by later 'dnf copr' use)"
+dnf_install dnf5-plugins || dnf_install dnf-plugins-core \
+  || log_warn "could not install dnf5-plugins or dnf-plugins-core; later COPR steps may fail"
+
 dnf_install \
   git curl wget jq ripgrep fd-find fzf bash-completion unzip tar which fontconfig \
   pciutils usbutils dmidecode \
@@ -25,7 +29,7 @@ dnf_install \
 
 log_info "installing uv"
 if ! command -v uv >/dev/null 2>&1; then
-  curl -fsSL https://astral.sh/uv/install.sh | sh
+  retry 2 bash -c 'curl -fsSL https://astral.sh/uv/install.sh | sh'
 fi
 ensure_path_line "$HOME/.bashrc" 'export PATH="$HOME/.local/bin:$PATH"'
 # shellcheck disable=SC1090

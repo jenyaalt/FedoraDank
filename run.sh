@@ -25,6 +25,8 @@ while [[ $# -gt 0 ]]; do
     --from)
       FROM="${2:-}"
       [[ -n "$FROM" ]] || { log_error "--from needs a stage number"; exit 1; }
+      [[ "$FROM" =~ ^[0-9]+$ ]] \
+        || { log_error "--from expects a numeric stage id (e.g. 40), got: '$FROM'"; exit 1; }
       shift 2
       ;;
     --help|-h) usage; exit 0 ;;
@@ -34,9 +36,27 @@ done
 
 mkdir -p "$FEDORADANK_CACHE"
 
+FROM_N=""
+[[ -n "$FROM" ]] && FROM_N=$((10#$FROM))
+
 if [[ "$FORCE" -eq 1 ]]; then
-  log_warn "clearing all stage markers"
-  rm -f "$FEDORADANK_CACHE"/*.done
+  if [[ -n "$FROM" ]]; then
+    # --force --from N: only clear markers for stages >= N, so earlier
+    # (already-completed) stages are not needlessly re-run.
+    log_warn "clearing stage markers >= $FROM (--force --from $FROM)"
+    for marker in "$FEDORADANK_CACHE"/*.done; do
+      [[ -e "$marker" ]] || continue
+      mid="$(basename "$marker" .done)"
+      [[ "$mid" =~ ^[0-9]+$ ]] || continue
+      mid_n=$((10#$mid))
+      if (( mid_n >= FROM_N )); then
+        rm -f "$marker"
+      fi
+    done
+  else
+    log_warn "clearing all stage markers"
+    rm -f "$FEDORADANK_CACHE"/*.done
+  fi
 fi
 
 mapfile -t STAGES < <(find "$ROOT/stages" -maxdepth 1 -type f -name '[0-9]*.sh' | sort)
@@ -51,9 +71,8 @@ for stage in "${STAGES[@]}"; do
   id="${base%%-*}"
 
   if [[ -n "$FROM" ]]; then
-    from_n=$((10#$FROM))
     id_n=$((10#$id))
-    if (( id_n < from_n )); then
+    if (( id_n < FROM_N )); then
       log_info "skip $base (--from $FROM)"
       continue
     fi
