@@ -28,9 +28,15 @@ Flags:
 
 During Dank, select **niri** and **Kitty**.
 
+Stage 50 downloads `dankinstall` from GitHub `releases/latest/download` (not the GitHub API) so it does not hit the common `Could not fetch latest version` rate-limit error from `install.danklinux.com`.
+
 ## Drivers
 
 Auto-detects **VirtualBox** (Guest Additions) or **Lenovo ThinkPad** (firmware, TLP, Intel/AMD/NVIDIA branch).
+
+## WiFi
+
+Stage 10 checks for NetworkManager (`nmcli` + enabled service). If missing, it installs **NetworkManager** (+ `NetworkManager-wifi` when available), **linux-firmware**, and enables the service.
 
 ## Docs
 

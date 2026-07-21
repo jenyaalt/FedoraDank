@@ -75,3 +75,25 @@ has_fingerprint() {
   fi
   return 1
 }
+
+# True if a wireless PHY or wireless net iface (or PCI WiFi) is visible.
+has_wifi_hardware() {
+  if [[ -d /sys/class/ieee80211 ]]; then
+    return 0
+  fi
+  local d
+  for d in /sys/class/net/*/wireless; do
+    [[ -e "$d" ]] && return 0
+  done
+  if command -v lspci >/dev/null 2>&1; then
+    lspci 2>/dev/null | grep -Eiq 'Network controller.*(Wireless|Wi-?Fi|WLAN)|Wireless controller' && return 0
+  fi
+  return 1
+}
+
+# True when NetworkManager is installed, nmcli exists, and the service is enabled.
+wifi_stack_ok() {
+  command -v nmcli >/dev/null 2>&1 \
+    && rpm -q NetworkManager >/dev/null 2>&1 \
+    && systemctl is-enabled NetworkManager >/dev/null 2>&1
+}
