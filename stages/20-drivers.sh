@@ -18,12 +18,39 @@ dnf_install linux-firmware mesa-dri-drivers mesa-vulkan-drivers || true
 
 case "$env_name" in
   virtualbox)
-    log_info "VirtualBox guest path"
-    dnf_install kernel-devel kernel-headers gcc make perl elfutils-libelf-devel
+    log_info "VirtualBox guest path — installing Guest Additions automatically"
+    # Match running kernel headers for module rebuilds where needed
+    dnf_install \
+      "kernel-devel-$(uname -r)" \
+      kernel-devel kernel-headers \
+      gcc make perl elfutils-libelf-devel \
+      || dnf_install kernel-devel kernel-headers gcc make perl elfutils-libelf-devel
+
+    # Official Fedora guest additions (preferred over Oracle ISO)
     if ! dnf_install virtualbox-guest-additions; then
-      log_warn "RPM Fusion guest additions unavailable."
-      log_warn "Insert Guest Additions ISO from VirtualBox UI and run the installer manually."
+      log_error "failed to install virtualbox-guest-additions from Fedora repos"
+      log_error "ensure network works and try: sudo dnf install virtualbox-guest-additions"
+      exit 1
     fi
+
+    # Guest services: shared clipboard, better video, shared folders (vboxsf), timesync
+    if systemctl list-unit-files vboxservice.service >/dev/null 2>&1; then
+      sudo systemctl enable --now vboxservice \
+        || log_warn "could not enable vboxservice — reboot after install"
+    fi
+    if systemctl list-unit-files vboxclient.service >/dev/null 2>&1; then
+      sudo systemctl enable --now vboxclient \
+        || log_warn "could not enable vboxclient (may start at graphical login)"
+    fi
+
+    # Shared folders group (harmless if already a member)
+    if getent group vboxsf >/dev/null 2>&1; then
+      sudo usermod -aG vboxsf "$USER" \
+        || log_warn "could not add $USER to vboxsf (shared folders may need a re-login)"
+    fi
+
+    log_success "VirtualBox Guest Additions installed ($(rpm -q virtualbox-guest-additions 2>/dev/null || echo ok))"
+    log_info "Reboot (or finish ./run.sh) for full Guest Additions (clipboard, resize, shared folders)"
     ;;
   thinkpad)
     log_info "ThinkPad path"

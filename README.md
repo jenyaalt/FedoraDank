@@ -32,7 +32,9 @@ Stage 50 downloads `dankinstall` from GitHub `releases/latest/download` (not the
 
 ## Drivers
 
-Auto-detects **VirtualBox** (Guest Additions) or **Lenovo ThinkPad** (firmware, TLP, Intel/AMD/NVIDIA branch).
+Auto-detects **VirtualBox** or **Lenovo ThinkPad** (firmware, TLP, Intel/AMD/NVIDIA branch).
+
+On **VirtualBox**, stage 20 automatically installs Fedora’s `virtualbox-guest-additions`, enables `vboxservice` (and `vboxclient` when present), and adds your user to `vboxsf` for shared folders. Reboot (or finish the bootstrap) for clipboard/resize to fully apply.
 
 ## WiFi
 
