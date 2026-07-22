@@ -27,6 +27,10 @@ dnf_install \
   nodejs npm \
   xdg-user-dirs
 
+# 7-Zip for Yazi archive preview/extract (zip, 7z, rar, …)
+dnf_install p7zip p7zip-plugins || dnf_install 7zip \
+  || log_warn "could not install p7zip/7zip — Yazi archive preview may be limited"
+
 # fd package provides `fd` or `fdfind` depending on distro — on Fedora it is `fd`
 # ripgrep provides `rg`
 
