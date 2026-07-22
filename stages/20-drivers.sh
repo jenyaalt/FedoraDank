@@ -51,7 +51,20 @@ case "$env_name" in
     service_enable_now tlp
     case "$gpu_name" in
       intel)
-        dnf_install intel-media-driver libva-intel-media-driver || dnf_install libva-intel-driver || true
+        # Modern iGPUs (Gen 9+ / ~2015+): RPM Fusion's "intel-media-driver"
+        # and Fedora's own free "libva-intel-media-driver" subpackage both
+        # provide the iHD VAAPI driver — requesting them in the SAME dnf
+        # transaction can fail (historically conflicted on
+        # /usr/lib64/dri/iHD_drv_video.so), which used to make the whole
+        # install fall through to the legacy-only driver below. Try them as
+        # independent, alternative installs instead.
+        dnf_install intel-media-driver || dnf_install libva-intel-media-driver \
+          || log_warn "no modern Intel VAAPI (iHD) driver installed"
+        # Legacy i965 driver for pre-Gen9 chips (Skylake/Kaby Lake and
+        # older) — safe to install alongside the modern driver.
+        dnf_install libva-intel-driver || true
+        # vainfo, to verify the VAAPI stack after install
+        dnf_install libva-utils || true
         ;;
       amd)
         log_info "AMD: relying on mesa + linux-firmware"

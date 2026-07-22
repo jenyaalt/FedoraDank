@@ -40,9 +40,15 @@ Auto-detects **VirtualBox** or **Lenovo ThinkPad** (firmware, TLP, Intel/AMD/NVI
 
 On **VirtualBox**, stage 20 automatically installs Fedora’s `virtualbox-guest-additions`, enables `vboxservice` (and `vboxclient` when present), and adds your user to `vboxsf` for shared folders. Reboot (or finish the bootstrap) for clipboard/resize to fully apply.
 
+On **ThinkPads with Intel graphics**, stage 20 installs the modern `intel-media-driver` (VAAPI/iHD, Gen 9+) and the legacy `libva-intel-driver` (pre-Gen9) as two independent installs — RPM Fusion's `intel-media-driver` and Fedora's own `libva-intel-media-driver` subpackage both ship the same `iHD_drv_video.so` and must not be requested in a single transaction, or the whole install can fail and silently fall back to legacy-only. `libva-utils` (`vainfo`) is installed alongside for verification.
+
 ## WiFi
 
 Stage 10 checks for NetworkManager (`nmcli` + enabled service). If missing, it installs **NetworkManager** (+ `NetworkManager-wifi` when available), **linux-firmware**, and enables the service.
+
+## Fonts
+
+A minimal Fedora netinstall ships **no font packages at all** (`fontconfig` is just the library/tools, not glyphs) — without at least one real font, Kitty and the niri/DankMaterialShell UI render blank or garbled text. Stage 10 installs a mandatory baseline (DejaVu, Noto Sans, Noto Color Emoji, Liberation) before anything graphical runs. Stage 40 additionally downloads Nerd Fonts (JetBrainsMono, FiraCode) from GitHub for terminal icon glyphs — that step is best-effort since it depends on GitHub being reachable.
 
 ## Docs
 
@@ -73,6 +79,8 @@ End-to-end checklist on a clean **VirtualBox Fedora 44 netinstall** (minimal, no
   - [ ] `easyeffects`
   - [ ] `docker`
   - [ ] `docker-compose` (or `docker compose version`)
+  - [ ] `7z` (or `7za`/`7zr` from p7zip on older releases)
+  - [ ] `fc-list | grep -i noto` and `fc-list | grep -i dejavu` (baseline fonts present)
 - [ ] `systemctl is-enabled docker` is enabled; `docker` works after re-login / `newgrp docker`
 - [ ] `systemctl get-default` prints `graphical.target`
 - [ ] `rpm -q pulseaudio` fails (classic daemon not installed; `pulseaudio-libs` from PipeWire stack is OK)

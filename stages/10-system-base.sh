@@ -27,9 +27,24 @@ dnf_install \
   nodejs npm \
   xdg-user-dirs
 
-# 7-Zip for Yazi archive preview/extract (zip, 7z, rar, …)
-dnf_install p7zip p7zip-plugins || dnf_install 7zip \
-  || log_warn "could not install p7zip/7zip — Yazi archive preview may be limited"
+# Baseline fonts — a minimal Fedora install ships NO font packages at all
+# (fontconfig above is just the library/tools, not glyphs). Without at
+# least one real font, Pango/HarfBuzz text shaping in Kitty and the
+# niri/DankMaterialShell UI renders blank/garbled. Nerd Fonts (stage 40)
+# are best-effort and downloaded from GitHub, so this baseline must not
+# depend on that succeeding.
+dnf_install \
+  dejavu-sans-fonts dejavu-sans-mono-fonts dejavu-serif-fonts \
+  google-noto-sans-fonts google-noto-emoji-color-fonts \
+  liberation-fonts \
+  || log_warn "baseline font install had issues — UI text may not render correctly"
+
+# 7-Zip for Yazi archive preview/extract (zip, 7z, rar, …). Fedora replaced
+# the unmaintained p7zip (dead upstream since 2016) with the official
+# "7zip" package; prefer it and only fall back to p7zip on older releases
+# that don't carry it yet.
+dnf_install 7zip || dnf_install p7zip p7zip-plugins \
+  || log_warn "could not install 7zip/p7zip — Yazi archive preview may be limited"
 
 # fd package provides `fd` or `fdfind` depending on distro — on Fedora it is `fd`
 # ripgrep provides `rg`
