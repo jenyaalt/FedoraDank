@@ -77,6 +77,33 @@ install_yazi_plugin() {
   return 1
 }
 
+# DankMaterialShell launcher reads freedesktop .desktop files from
+# ~/.local/share/applications (and system dirs).
+install_yazi_desktop_entry() {
+  local desk_src="$1"
+  local apps_dir="$HOME/.local/share/applications"
+  local icons_dir="$HOME/.local/share/icons/hicolor/256x256/apps"
+  mkdir -p "$apps_dir" "$icons_dir"
+
+  cp -f "$desk_src" "$apps_dir/yazi.desktop"
+  chmod 644 "$apps_dir/yazi.desktop"
+
+  if [[ ! -f "$icons_dir/yazi.png" ]]; then
+    log_info "downloading Yazi icon for launcher"
+    curl -fsSL -o "$icons_dir/yazi.png" \
+      "https://raw.githubusercontent.com/sxyazi/yazi/main/assets/logo.png" \
+      || log_warn "could not download Yazi icon; launcher may show a generic icon"
+  fi
+
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "$apps_dir" >/dev/null 2>&1 || true
+  fi
+  if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+  fi
+  log_success "Yazi desktop entry → $apps_dir/yazi.desktop"
+}
+
 configure_yazi() {
   command -v yazi >/dev/null 2>&1 || {
     log_warn "yazi not installed; skipping config"
@@ -95,6 +122,9 @@ configure_yazi() {
 
   log_info "installing Yazi config from $cfg_src"
   cp -f "$cfg_src/yazi.toml" "$cfg_src/keymap.toml" "$cfg_src/init.lua" "$cfg_dst/"
+
+  # Dank / freedesktop launcher entry (~/.local/share/applications)
+  install_yazi_desktop_entry "$cfg_src/yazi.desktop"
 
   # recycle-bin.yazi
   if ! install_yazi_plugin "$cfg_dst/plugins/recycle-bin.yazi" uhs-robert/recycle-bin; then
@@ -119,7 +149,7 @@ configure_yazi() {
   [[ -d "$cfg_dst/plugins/mount.yazi" ]] \
     || { log_error "mount.yazi missing"; return 1; }
 
-  log_success "Yazi configured (hidden files, recycle-bin Rb, mount M)"
+  log_success "Yazi configured (hidden files, recycle-bin Rb, mount M, Dank launcher)"
 }
 configure_yazi || log_warn "Yazi config failed; continuing without it"
 

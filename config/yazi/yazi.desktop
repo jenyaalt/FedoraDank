@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Yazi
+GenericName=File Manager
+Comment=Blazing fast terminal file manager
+# Launch in Kitty (Dank default terminal) so the TUI works from the app launcher
+TryExec=yazi
+Exec=kitty --class yazi -e yazi %U
+Icon=yazi
+Terminal=false
+Categories=System;FileTools;FileManager;Utility;
+MimeType=inode/directory;
+Keywords=yazi;files;fm;explorer;manager;
+StartupNotify=true
+StartupWMClass=yazi
