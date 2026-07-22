@@ -24,11 +24,15 @@ Flags:
 
 ## Install order
 
-00 preflight → 10 system base → 20 drivers → 30 audio → 40 apps → 50 Dank (interactive) → 99 finish
+00 preflight → 10 system base → 15 Docker → 20 drivers → 30 audio → 40 apps → 50 Dank (interactive) → 99 finish
 
 During Dank, select **niri** and **Kitty**.
 
 Stage 50 downloads `dankinstall` from GitHub `releases/latest/download` (not the GitHub API) so it does not hit the common `Could not fetch latest version` rate-limit error from `install.danklinux.com`.
+
+## Docker
+
+Stage **15** installs **Docker Engine** + **Compose** (Docker CE repo preferred; Fedora `moby-engine` fallback), enables the `docker` service, adds your user to the `docker` group, and ensures a `docker-compose` command (wrapper to `docker compose` when needed). Re-login (or `newgrp docker`) before using Docker without `sudo`.
 
 ## Drivers
 
@@ -67,6 +71,9 @@ End-to-end checklist on a clean **VirtualBox Fedora 44 netinstall** (minimal, no
   - [ ] `npx`
   - [ ] `fetch`
   - [ ] `easyeffects`
+  - [ ] `docker`
+  - [ ] `docker-compose` (or `docker compose version`)
+- [ ] `systemctl is-enabled docker` is enabled; `docker` works after re-login / `newgrp docker`
 - [ ] `systemctl get-default` prints `graphical.target`
 - [ ] `rpm -q pulseaudio` fails (classic daemon not installed; `pulseaudio-libs` from PipeWire stack is OK)
 - [ ] Environment-specific drivers exercised:
