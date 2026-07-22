@@ -62,11 +62,10 @@ else
     || log_warn "NetworkManager / linux-firmware install had issues"
   # Optional WiFi plugin package on some Fedora releases
   dnf_install NetworkManager-wifi || log_warn "NetworkManager-wifi not available (may be bundled)"
-  if ! sudo systemctl enable --now NetworkManager; then
-    log_warn "could not enable NetworkManager — start it manually after reboot"
-  else
-    log_success "NetworkManager enabled"
-  fi
+fi
+# Always enable NM when the package is present (idempotent)
+if rpm -q NetworkManager >/dev/null 2>&1; then
+  service_enable_now NetworkManager
 fi
 
 log_info "installing uv"

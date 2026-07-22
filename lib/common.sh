@@ -78,3 +78,40 @@ ensure_path_line() {
   touch "$file"
   grep -Fqx "$line" "$file" 2>/dev/null || printf '%s\n' "$line" >>"$file"
 }
+
+# Enable and start systemd units if present. Never aborts the caller.
+# Usage: service_enable_now [--user] unit [unit...]
+service_enable_now() {
+  local user=0
+  if [[ "${1:-}" == "--user" ]]; then
+    user=1
+    shift
+  fi
+  local unit
+  for unit in "$@"; do
+    if [[ "$user" -eq 1 ]]; then
+      if systemctl --user cat "$unit" >/dev/null 2>&1 \
+        || systemctl --user cat "${unit}.service" >/dev/null 2>&1; then
+        if systemctl --user enable --now "$unit" 2>/dev/null; then
+          log_success "enabled (user): $unit"
+        else
+          log_warn "could not enable (user): $unit"
+        fi
+      else
+        log_warn "user unit not found, skip: $unit"
+      fi
+    else
+      if systemctl cat "$unit" >/dev/null 2>&1 \
+        || systemctl cat "${unit}.service" >/dev/null 2>&1; then
+        if sudo systemctl enable --now "$unit" 2>/dev/null; then
+          log_success "enabled: $unit"
+        else
+          log_warn "could not enable: $unit"
+        fi
+      else
+        log_warn "unit not found, skip: $unit"
+      fi
+    fi
+  done
+  return 0
+}

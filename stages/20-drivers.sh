@@ -34,14 +34,7 @@ case "$env_name" in
     fi
 
     # Guest services: shared clipboard, better video, shared folders (vboxsf), timesync
-    if systemctl list-unit-files vboxservice.service >/dev/null 2>&1; then
-      sudo systemctl enable --now vboxservice \
-        || log_warn "could not enable vboxservice — reboot after install"
-    fi
-    if systemctl list-unit-files vboxclient.service >/dev/null 2>&1; then
-      sudo systemctl enable --now vboxclient \
-        || log_warn "could not enable vboxclient (may start at graphical login)"
-    fi
+    service_enable_now vboxservice vboxclient
 
     # Shared folders group (harmless if already a member)
     if getent group vboxsf >/dev/null 2>&1; then
@@ -55,7 +48,7 @@ case "$env_name" in
   thinkpad)
     log_info "ThinkPad path"
     dnf_install sof-firmware tlp tlp-rdw
-    sudo systemctl enable --now tlp || log_warn "could not enable tlp"
+    service_enable_now tlp
     case "$gpu_name" in
       intel)
         dnf_install intel-media-driver libva-intel-media-driver || dnf_install libva-intel-driver || true
@@ -75,6 +68,7 @@ case "$env_name" in
     esac
     if has_fingerprint; then
       dnf_install fprintd fprintd-pam || true
+      service_enable_now fprintd
     fi
     ;;
   unknown)

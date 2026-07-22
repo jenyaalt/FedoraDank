@@ -20,7 +20,8 @@ if rpm -q calf >/dev/null 2>&1; then
   sudo dnf remove -y calf || log_warn "could not remove calf"
 fi
 
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || \
-  log_warn "user pipewire services will start at graphical login"
+# User audio stack + system Bluetooth
+service_enable_now --user pipewire pipewire-pulse wireplumber
+service_enable_now bluetooth
 
-log_success "PipeWire + EasyEffects installed"
+log_success "PipeWire + EasyEffects + Bluetooth installed"

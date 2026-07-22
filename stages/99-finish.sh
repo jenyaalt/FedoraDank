@@ -6,6 +6,11 @@ source "$STAGE_DIR/../lib/common.sh"
 
 sudo systemctl set-default graphical.target
 
+# Final pass: enable/start anything this bootstrap installs (idempotent; skips missing units)
+log_info "ensuring installed services are enabled"
+service_enable_now NetworkManager bluetooth tlp fprintd udisks2 vboxservice vboxclient
+service_enable_now --user pipewire pipewire-pulse wireplumber
+
 env_name="$(cat "$FEDORADANK_CACHE/env.txt" 2>/dev/null || echo unknown)"
 gpu_name="$(cat "$FEDORADANK_CACHE/gpu.txt" 2>/dev/null || echo unknown)"
 

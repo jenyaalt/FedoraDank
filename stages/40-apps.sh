@@ -118,6 +118,7 @@ configure_yazi() {
   # Dependencies: trash-cli for recycle-bin; udisks2 for USB mount/eject
   dnf_install trash-cli udisks2 util-linux \
     || log_warn "trash-cli/udisks2 install had issues; plugins may be limited"
+  service_enable_now udisks2
   mkdir -p "$HOME/.local/share/Trash/"{files,info}
 
   log_info "installing Yazi config from $cfg_src"
