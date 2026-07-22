@@ -24,7 +24,7 @@ Flags:
 
 ## Install order
 
-00 preflight → 10 system base → 15 Docker → 20 drivers → 30 audio → 40 apps → 50 Dank (interactive) → 99 finish
+00 preflight → 10 system base → 20 drivers → 30 audio → 40 apps → 45 Docker → 50 Dank (interactive) → 99 finish
 
 During Dank, select **niri** and **Kitty**.
 
@@ -32,7 +32,7 @@ Stage 50 downloads `dankinstall` from GitHub `releases/latest/download` (not the
 
 ## Docker
 
-Stage **15** installs **Docker Engine** + **Compose** (Docker CE repo preferred; Fedora `moby-engine` fallback), enables the `docker` service, adds your user to the `docker` group, and ensures a `docker-compose` command (wrapper to `docker compose` when needed). Re-login (or `newgrp docker`) before using Docker without `sudo`.
+Stage **45** installs **Docker Engine** + **Compose** (Docker CE repo preferred; Fedora `moby-engine` fallback), enables the `docker` service, adds your user to the `docker` group, and ensures a `docker-compose` command (wrapper to `docker compose` when needed). Re-login (or `newgrp docker`) before using Docker without `sudo`.
 
 ## Drivers
 
