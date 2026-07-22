@@ -62,6 +62,16 @@ dnf_install() {
   retry 2 sudo dnf install -y "$@"
 }
 
+# Enable a COPR project non-interactively.
+# On dnf5 (Fedora 41+), `dnf copr enable -y OWNER/PROJECT` is wrong: `-y` is
+# parsed as the project-spec. Put assumeyes before the subcommand, or after
+# the project name.
+copr_enable() {
+  local project="$1"
+  sudo dnf -y copr enable "$project" \
+    || sudo dnf copr enable "$project" -y
+}
+
 ensure_path_line() {
   local file="$1" line="$2"
   mkdir -p "$(dirname "$file")"

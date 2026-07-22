@@ -10,11 +10,42 @@ dnf_install kitty
 # All other apps below are best-effort: a single failure must not abort the
 # stage before Dank gets installed (stage 50).
 
+# Yazi is not in Fedora official repos; official path is COPR lihaohong/yazi.
+install_yazi_binary() {
+  local arch tmp dest
+  case "$(uname -m)" in
+    x86_64) arch=x86_64 ;;
+    aarch64|arm64) arch=aarch64 ;;
+    *)
+      log_error "unsupported arch for yazi binary: $(uname -m)"
+      return 1
+      ;;
+  esac
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  curl -fsSL -o "$tmp/yazi.zip" \
+    "https://github.com/sxyazi/yazi/releases/latest/download/yazi-${arch}-unknown-linux-gnu.zip"
+  unzip -qo "$tmp/yazi.zip" -d "$tmp"
+  dest="$HOME/.local/bin"
+  mkdir -p "$dest"
+  # Zip layout: yazi-<triple>/{yazi,ya}
+  install -m 755 "$tmp"/yazi-*/yazi "$tmp"/yazi-*/ya "$dest/"
+  ensure_path_line "$HOME/.bashrc" 'export PATH="$HOME/.local/bin:$PATH"'
+  export PATH="$dest:$PATH"
+  command -v yazi >/dev/null 2>&1
+}
+
 install_yazi() {
-  dnf_install yazi && return 0
-  log_info "trying COPR for yazi"
-  sudo dnf copr enable -y lihaohong/yazi || sudo dnf copr enable -y appimagenerd/yazi || true
-  dnf_install yazi
+  command -v yazi >/dev/null 2>&1 && return 0
+  # file(1) is required for mime detection
+  dnf_install file || true
+  log_info "enabling COPR lihaohong/yazi"
+  if copr_enable lihaohong/yazi && dnf_install yazi; then
+    log_success "yazi from COPR"
+    return 0
+  fi
+  log_info "COPR yazi failed; installing official GitHub binary"
+  install_yazi_binary && log_success "yazi from GitHub release"
 }
 install_yazi || log_warn "yazi install failed; continuing without it"
 
@@ -77,7 +108,7 @@ install_nerd_fonts || log_warn "Nerd Fonts install failed; continuing without th
 # fetch (areofyl/fetch)
 install_fetch() {
   command -v fetch >/dev/null 2>&1 && return 0
-  if sudo dnf copr enable -y realorangekun/fetch && dnf_install fetch; then
+  if copr_enable realorangekun/fetch && dnf_install fetch; then
     log_success "fetch from COPR"
     return 0
   fi
