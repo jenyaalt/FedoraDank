@@ -1,0 +1,9 @@
+# FedoraDank Yazi keymaps
+# Use the array form only — do not mix with [[mgr.prepend_keymap]] tables.
+[mgr]
+prepend_keymap = [
+  # Recycle Bin (uhs-robert/recycle-bin) — menu: o open, r restore, d delete, e empty, D by days
+  { on = [ "R", "b" ], run = "plugin recycle-bin", desc = "Open Recycle Bin menu" },
+  # Mount manager (yazi-rs/plugins:mount) — USB/disks: m mount, u unmount, e eject, l enter
+  { on = "M", run = "plugin mount", desc = "Mount manager (USB / disks)" },
+]

@@ -10,9 +10,10 @@ dnf_install kitty
 # All other apps below are best-effort: a single failure must not abort the
 # stage before Dank gets installed (stage 50).
 
-# Yazi is not in Fedora official repos; official path is COPR lihaohong/yazi.
-install_yazi_binary() {
-  local arch tmp dest
+# Yazi is not in Fedora official repos. Prefer the official GitHub binary
+# into /usr/local/bin (always on PATH). COPR is a secondary option only.
+install_yazi_from_github() {
+  local arch tmp triple
   case "$(uname -m)" in
     x86_64) arch=x86_64 ;;
     aarch64|arm64) arch=aarch64 ;;
@@ -21,33 +22,106 @@ install_yazi_binary() {
       return 1
       ;;
   esac
+  triple="yazi-${arch}-unknown-linux-gnu"
+  require_cmd curl
+  require_cmd unzip
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' RETURN
+  # Clear RETURN trap after it runs so it does not stick on the stage script.
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'; trap - RETURN" RETURN
+  log_info "downloading $triple from GitHub releases"
   curl -fsSL -o "$tmp/yazi.zip" \
-    "https://github.com/sxyazi/yazi/releases/latest/download/yazi-${arch}-unknown-linux-gnu.zip"
+    "https://github.com/sxyazi/yazi/releases/latest/download/${triple}.zip"
   unzip -qo "$tmp/yazi.zip" -d "$tmp"
-  dest="$HOME/.local/bin"
-  mkdir -p "$dest"
-  # Zip layout: yazi-<triple>/{yazi,ya}
-  install -m 755 "$tmp"/yazi-*/yazi "$tmp"/yazi-*/ya "$dest/"
-  ensure_path_line "$HOME/.bashrc" 'export PATH="$HOME/.local/bin:$PATH"'
-  export PATH="$dest:$PATH"
+  [[ -x "$tmp/$triple/yazi" && -x "$tmp/$triple/ya" ]] \
+    || { log_error "yazi zip missing binaries"; return 1; }
+  sudo install -m 755 "$tmp/$triple/yazi" "$tmp/$triple/ya" /usr/local/bin/
   command -v yazi >/dev/null 2>&1
 }
 
 install_yazi() {
-  command -v yazi >/dev/null 2>&1 && return 0
-  # file(1) is required for mime detection
-  dnf_install file || true
-  log_info "enabling COPR lihaohong/yazi"
-  if copr_enable lihaohong/yazi && dnf_install yazi; then
-    log_success "yazi from COPR"
+  if command -v yazi >/dev/null 2>&1; then
+    log_success "yazi already present: $(command -v yazi)"
     return 0
   fi
-  log_info "COPR yazi failed; installing official GitHub binary"
-  install_yazi_binary && log_success "yazi from GitHub release"
+  # file(1) is required for mime detection
+  dnf_install file || log_warn "could not install file(1); yazi previews may be limited"
+
+  if install_yazi_from_github; then
+    log_success "yazi installed to $(command -v yazi)"
+    return 0
+  fi
+
+  log_warn "GitHub binary install failed; trying COPR lihaohong/yazi"
+  if copr_enable lihaohong/yazi && dnf_install yazi && command -v yazi >/dev/null 2>&1; then
+    log_success "yazi from COPR: $(command -v yazi)"
+    return 0
+  fi
+
+  log_error "yazi is not on PATH after all install attempts"
+  return 1
 }
 install_yazi || log_warn "yazi install failed; continuing without it"
+
+# Yazi config: hidden files, recycle-bin plugin, USB/disk mount manager.
+install_yazi_plugin() {
+  local dest="$1"
+  shift
+  [[ -d "$dest" ]] && return 0
+  if command -v ya >/dev/null 2>&1; then
+    # `ya pkg add` clones into ~/.config/yazi/plugins/
+    if ya pkg add "$@"; then
+      [[ -d "$dest" ]] && return 0
+    fi
+  fi
+  return 1
+}
+
+configure_yazi() {
+  command -v yazi >/dev/null 2>&1 || {
+    log_warn "yazi not installed; skipping config"
+    return 1
+  }
+
+  local cfg_src cfg_dst
+  cfg_src="$(cd "$STAGE_DIR/../config/yazi" && pwd)"
+  cfg_dst="$HOME/.config/yazi"
+  mkdir -p "$cfg_dst/plugins"
+
+  # Dependencies: trash-cli for recycle-bin; udisks2 for USB mount/eject
+  dnf_install trash-cli udisks2 util-linux \
+    || log_warn "trash-cli/udisks2 install had issues; plugins may be limited"
+  mkdir -p "$HOME/.local/share/Trash/"{files,info}
+
+  log_info "installing Yazi config from $cfg_src"
+  cp -f "$cfg_src/yazi.toml" "$cfg_src/keymap.toml" "$cfg_src/init.lua" "$cfg_dst/"
+
+  # recycle-bin.yazi
+  if ! install_yazi_plugin "$cfg_dst/plugins/recycle-bin.yazi" uhs-robert/recycle-bin; then
+    log_info "falling back to git clone for recycle-bin.yazi"
+    git clone --depth 1 https://github.com/uhs-robert/recycle-bin.yazi.git \
+      "$cfg_dst/plugins/recycle-bin.yazi"
+  fi
+
+  # mount.yazi (from yazi-rs/plugins monorepo) — USB sticks / disks
+  if ! install_yazi_plugin "$cfg_dst/plugins/mount.yazi" yazi-rs/plugins:mount; then
+    log_info "falling back to git clone for mount.yazi"
+    local tmp
+    tmp="$(mktemp -d)"
+    # shellcheck disable=SC2064
+    trap "rm -rf '$tmp'; trap - RETURN" RETURN
+    git clone --depth 1 https://github.com/yazi-rs/plugins.git "$tmp/plugins"
+    cp -a "$tmp/plugins/mount.yazi" "$cfg_dst/plugins/"
+  fi
+
+  [[ -d "$cfg_dst/plugins/recycle-bin.yazi" ]] \
+    || { log_error "recycle-bin.yazi missing"; return 1; }
+  [[ -d "$cfg_dst/plugins/mount.yazi" ]] \
+    || { log_error "mount.yazi missing"; return 1; }
+
+  log_success "Yazi configured (hidden files, recycle-bin Rb, mount M)"
+}
+configure_yazi || log_warn "Yazi config failed; continuing without it"
 
 install_chrome() {
   rpm -q google-chrome-stable >/dev/null 2>&1 && return 0

@@ -1,0 +1,4 @@
+# FedoraDank Yazi defaults — https://yazi-rs.github.io/docs/configuration/yazi/
+[mgr]
+# Show dotfiles (e.g. .config, .git) without pressing '.'
+show_hidden = true
