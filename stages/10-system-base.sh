@@ -24,10 +24,30 @@ dnf_install \
   git curl wget jq ripgrep fd-find fzf bash-completion unzip tar which fontconfig \
   pciutils usbutils dmidecode \
   python3 python3-devel python3-pip \
-  nodejs npm
+  nodejs npm \
+  xdg-user-dirs
 
 # fd package provides `fd` or `fdfind` depending on distro — on Fedora it is `fd`
 # ripgrep provides `rg`
+
+# Minimal Fedora has no Desktop/Documents/Downloads/… — create XDG user dirs
+log_info "creating XDG user directories (Documents, Downloads, …)"
+if command -v xdg-user-dirs-update >/dev/null 2>&1; then
+  # --force recreates missing dirs instead of pointing them at $HOME
+  xdg-user-dirs-update --force
+  log_success "XDG user dirs ready under $HOME"
+else
+  log_warn "xdg-user-dirs-update missing; creating common folders manually"
+  mkdir -p \
+    "$HOME/Desktop" \
+    "$HOME/Documents" \
+    "$HOME/Downloads" \
+    "$HOME/Music" \
+    "$HOME/Pictures" \
+    "$HOME/Public" \
+    "$HOME/Templates" \
+    "$HOME/Videos"
+fi
 
 # WiFi: if NetworkManager is missing/disabled, install NM + firmware and enable it
 if wifi_stack_ok; then
