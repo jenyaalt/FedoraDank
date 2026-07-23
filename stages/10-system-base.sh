@@ -68,23 +68,27 @@ else
     "$HOME/Videos"
 fi
 
-# WiFi: if NetworkManager is missing/disabled, install NM + firmware and enable it
-if wifi_stack_ok; then
-  log_info "WiFi stack OK (NetworkManager enabled)"
-else
-  if has_wifi_hardware; then
-    log_info "WiFi hardware present but NetworkManager support missing — installing"
-  else
-    log_info "NetworkManager WiFi support missing — installing NetworkManager + firmware"
-  fi
-  dnf_install NetworkManager linux-firmware \
-    || log_warn "NetworkManager / linux-firmware install had issues"
-  # Optional WiFi plugin package on some Fedora releases
-  dnf_install NetworkManager-wifi || log_warn "NetworkManager-wifi not available (may be bundled)"
+# WiFi stack — always install (idempotent). Do not skip when NetworkManager alone
+# is already enabled: Fedora ships WiFi as NetworkManager-wifi, and Intel CNVi
+# firmware lives in iwlwifi-*-firmware (not the linux-firmware meta package).
+log_info "installing WiFi stack (NetworkManager + firmware)"
+if has_wifi_hardware; then
+  log_info "WiFi hardware detected"
 fi
-# Always enable NM when the package is present (idempotent)
+dnf_install NetworkManager NetworkManager-wifi linux-firmware \
+  || log_warn "NetworkManager / NetworkManager-wifi / linux-firmware install had issues"
+# Intel WiFi (ThinkPad CNVi / iwlwifi): MVM is the usual path; MLD/DVM for newer/older
+dnf_install iwlwifi-mvm-firmware iwlwifi-mld-firmware iwlwifi-dvm-firmware \
+  || log_warn "Intel iwlwifi firmware packages had issues (non-Intel WiFi may still work)"
+# Common non-Intel chipsets (best-effort; harmless if unused)
+dnf_install atheros-firmware realtek-firmware mt7xxx-firmware brcmfmac-firmware \
+  || true
+
+# Enable and start NetworkManager so scanning works immediately
 if rpm -q NetworkManager >/dev/null 2>&1; then
   service_enable_now NetworkManager
+else
+  log_warn "NetworkManager not installed — WiFi will not work until it is"
 fi
 
 log_info "installing uv"

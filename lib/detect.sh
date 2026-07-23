@@ -91,9 +91,10 @@ has_wifi_hardware() {
   return 1
 }
 
-# True when NetworkManager is installed, nmcli exists, and the service is enabled.
+# True when NM + WiFi plugin are installed, nmcli exists, and the service is enabled.
 wifi_stack_ok() {
   command -v nmcli >/dev/null 2>&1 \
     && rpm -q NetworkManager >/dev/null 2>&1 \
+    && rpm -q NetworkManager-wifi >/dev/null 2>&1 \
     && systemctl is-enabled NetworkManager >/dev/null 2>&1
 }

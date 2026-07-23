@@ -47,7 +47,8 @@ case "$env_name" in
     ;;
   thinkpad)
     log_info "ThinkPad path"
-    dnf_install sof-firmware tlp tlp-rdw
+    # Sound Open Firmware (Fedora names the RPM alsa-sof-firmware)
+    dnf_install alsa-sof-firmware tlp tlp-rdw
     service_enable_now tlp
     case "$gpu_name" in
       intel)

@@ -44,7 +44,7 @@ On **ThinkPads with Intel graphics**, stage 20 installs the modern `intel-media-
 
 ## WiFi
 
-Stage 10 checks for NetworkManager (`nmcli` + enabled service). If missing, it installs **NetworkManager** (+ `NetworkManager-wifi` when available), **linux-firmware**, and enables the service.
+Stage 10 always installs **NetworkManager**, **NetworkManager-wifi**, **linux-firmware**, and Intel **iwlwifi-*-firmware** packages (plus common vendor firmware), then **enables and starts** NetworkManager. On Fedora 44, WiFi scanning needs the separate `NetworkManager-wifi` plugin and Intel firmware is no longer inside the `linux-firmware` meta package alone.
 
 ## Fonts
 
