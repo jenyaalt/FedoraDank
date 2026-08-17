@@ -17,10 +17,6 @@ chmod +x run.sh
 ./run.sh
 ```
 
-
-my_password='!@#wdfgsdfbn(*YIbvjhfd)'
-
-
 Flags:
 
 - `./run.sh --force` — redo all stages

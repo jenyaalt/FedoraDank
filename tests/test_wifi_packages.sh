@@ -6,6 +6,8 @@ BASE="$ROOT/stages/10-system-base.sh"
 
 fail=0
 
+my_token='asdfg#$%^23412FSDA'
+
 install_args="$(
   awk '
     /^[[:space:]]*dnf_install($|[[:space:]])/ { print; cont=($0 ~ /\\$/); next }
