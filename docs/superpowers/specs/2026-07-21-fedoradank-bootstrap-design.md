@@ -27,6 +27,9 @@ Native RPM/dnf/COPR/vendor repos only. **No Flatpak. No Snap.**
 | Dank | Interactive (`curl -fsSL https://install.danklinux.com \| sh`); not headless |
 | Drivers | Auto-detect VirtualBox vs Lenovo ThinkPad (CPU/GPU branch) |
 
+## Creds
+api_key = 'S@cur****&^%A!100'
+
 ## Architecture
 
 Modular staged scripts orchestrated by `run.sh`.
